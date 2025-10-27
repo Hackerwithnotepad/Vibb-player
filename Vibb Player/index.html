@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <title>Vibb</title>
+  <style>
+    /*
+    ═══════════════════════════════════════════════════════════════
+    HOW TO ADD MUSIC - SUPER SIMPLE!
+    ═══════════════════════════════════════════════════════════════
+    Just add the platform type and paste the URL. That's it!
+    
+    Format:
+    { type: 'spotify', url: 'PASTE_URL_HERE' },
+    { type: 'youtube', url: 'PASTE_URL_HERE' },
+    { type: 'soundcloud', url: 'PASTE_URL_HERE' },
+    { type: 'bandcamp', url: 'PASTE_URL_HERE', id: 'ALBUM_ID' },
+    { type: 'applemusic', url: 'PASTE_URL_HERE' },
+    
+    The code automatically converts URLs to working embeds!
+    ═══════════════════════════════════════════════════════════════
+    */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: #0b1220;
+      color: #e6eef8;
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .player-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.7);
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 30px;
+      color: #ffffff;
+    }
+
+    .platform-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: white;
+      transition: transform 0.2s;
+    }
+
+    .platform-badge:hover {
+      transform: scale(1.05);
+    }
+
+    .badge-spotify { background: #1db954; }
+    .badge-youtube { background: #ff0000; }
+    .badge-soundcloud { background: #ff5500; }
+    .badge-bandcamp { background: #629aa9; }
+    .badge-applemusic { background: #fa2b57; }
+
+    .embed-wrapper {
+      margin: 20px 0;
+    }
+
+    .embed-wrapper iframe {
+      width: 100%;
+      border-radius: 8px;
+      background: transparent;
+    }
+
+    .embed-error {
+      padding: 18px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      color: #f1f5f9;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .bandcamp-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .bandcamp-wrapper iframe {
+      width: 350px;
+      height: 350px;
+      border: 0;
+    }
+
+    .youtube-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .youtube-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .refresh-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: #3a7bc8;
+    }
+
+    .refresh-btn:active {
+      transform: scale(0.98);
+    }
+
+    .collection-info {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #9aa6b3;
+    }
+
+    @media (max-width: 640px) {
+      .player-card {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="player-card">
+      <h1>Vibb</h1>
+
+      <a href="#" target="_blank" rel="noopener noreferrer" id="platformBadge" class="platform-badge">—</a>
+
+      <div class="embed-wrapper" id="embedContainer">
+        <!-- Embed will be inserted here -->
+      </div>
+
+  <button type="button" class="refresh-btn" onclick="loadRandomTrack()">🔀 Play Something Else</button>
+      
+      <div class="collection-info">
+        <span id="collectionSize">0</span> tracks in collection
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // YOUR MUSIC COLLECTION - JUST PASTE URLs!
+    // ═══════════════════════════════════════════════════════════════
+    
+    const musicCollection = [
+  // YouTube
+  { type: 'youtube', url: 'https://www.youtube.com/watch?v=rAOHJqJMYDA' }, // Underworld Boiler Room London
+  { type: 'youtube', url: 'https://www.youtube.com/watch?v=Lbn7DoANUYE' }, // Everything In It's Right Place - Radiohead [800% Slower]
+  { type: 'youtube', url: 'https://www.youtube.com/playlist?list=PLVjWWIQMML6DDTDCHpmeD_taffA9PZw_u' }, // Nils Frahm - Spaces
+  { type: 'youtube', url: 'https://www.youtube.com/watch?v=LEVI37XfL8Q' }, // Bonobo - Migration Full Album
+  { type: 'youtube', url: 'https://www.youtube.com/playlist?list=PL_rtcuEJIlF0CdXE22jwstb-tiwe6EFSp' }, // Four Tet - There Is Love in You
+  { type: 'youtube', url: 'https://www.youtube.com/watch?v=yIyVEJd0fNc' }, // Autechre - Amber Full Album
+
+  // SoundCloud
+  { type: 'soundcloud', url: 'https://soundcloud.com/odesza/sets/a-moment-apart-selections' }, // Odesza - A Moment Apart
+  { type: 'soundcloud', url: 'https://soundcloud.com/boardsofcanada/sets/twoism-1' }, // Boards of Canada - Twoism
+  { type: 'soundcloud', url: 'https://soundcloud.com/tycho/sets/tycho-awake-deluxe-version' }, // Tycho - Awake Deluxe Version
+  { type: 'soundcloud', url: 'https://soundcloud.com/carbonbasedlifeforms/sets/derelicts' }, // Carbon Based Lifeforms - Derelicts
+
+  // Bandcamp
+  { type: 'bandcamp', url: 'https://tycho.bandcamp.com/album/dive', id: '3619628392' },
+  { type: 'bandcamp', url: 'https://tycho.bandcamp.com/album/awake', id: '2414419453' },
+  { type: 'bandcamp', url: 'https://carbonbasedlifeforms.bandcamp.com/album/hydroponic-garden', id: '4189756071' },
+  { type: 'bandcamp', url: 'https://apollorecords.bandcamp.com/album/selected-ambient-works-85-92', id: '1881652386' },
+  { type: 'bandcamp', url: 'https://jonhopkins.bandcamp.com/album/immunity', id: '414184384' },
+  { type: 'bandcamp', url: 'https://boardsofcanada.bandcamp.com/album/music-has-the-right-to-children', id: '3297123711' },
+
+  // Spotify
+  { type: 'spotify', url: 'https://open.spotify.com/album/4SWYAKJf18HgXL9At4s6eF?go=1&sp_cid=8679c50193f612ff1fa250d49c8ec811&utm_source=embed_player_p&utm_medium=desktop&nd=1&dlsi=92bb1f925fb74ce2' },
+  { type: 'spotify', url: 'https://open.spotify.com/album/6htxNLNP2cg6QIkMAjk2cY?go=1&sp_cid=8679c50193f612ff1fa250d49c8ec811' },
+  { type: 'spotify', url: 'https://open.spotify.com/track/6Rukl1o3JwdXKVDmvoJ9vr?si=d832dc7e30a140f6' },
+  { type: 'spotify', url: 'https://open.spotify.com/album/1F8bdfCOwq7obiDlaoXgv7?go=1&sp_cid=8679c50193f612ff1fa250d49c8ec811&utm_source=embed_player_p' },
+
+  // Apple Music
+  { type: 'applemusic', url: 'https://music.apple.com/us/playlist/lo-fi-chill/pl.1d5ead185d8a4a9089f3b952770b762c' },
+];
+
+    // ═══════════════════════════════════════════════════════════════
+    // AUTO-CONVERT URLs TO EMBEDS
+    // ═══════════════════════════════════════════════════════════════
+    
+    function convertToEmbed(type, url, id = null) {
+      let embedHTML = '';
+      
+      if (type === 'youtube') {
+        // Extract playlist and video IDs (handle watch?v=...&list=... too)
+        const playlistId = url.match(/[?&]list=([^&\s]+)/)?.[1];
+        const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s?]+)/)?.[1];
+
+        if (videoId) {
+          // If both video and playlist exist, include the list param so the embed can play the playlist from the video
+          const listParam = playlistId ? `?list=${playlistId}` : '';
+          embedHTML = `<div class="youtube-wrapper"><iframe src="https://www.youtube.com/embed/${videoId}${listParam}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+        } else if (playlistId) {
+          // Pure playlist URL
+          embedHTML = `<div class="youtube-wrapper"><iframe src="https://www.youtube.com/embed/videoseries?list=${playlistId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+        }
+      }
+      
+      else if (type === 'spotify') {
+        // Extract type (album/track/playlist) and ID
+        const match = url.match(/spotify\.com\/(album|track|playlist)\/([^?\s]+)/);
+        if (match) {
+          const [, contentType, spotifyId] = match;
+          embedHTML = `<iframe class="spotify-embed" src="https://open.spotify.com/embed/${contentType}/${spotifyId}" width="100%" height="352" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+      }
+      
+      else if (type === 'soundcloud') {
+        // SoundCloud requires their widget with the full URL
+        const encodedUrl = encodeURIComponent(url);
+  embedHTML = `<iframe width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay" loading="lazy" src="https://w.soundcloud.com/player/?url=${encodedUrl}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>`;
+      }
+      
+      else if (type === 'bandcamp') {
+        // Bandcamp requires numeric album ID
+        if (id) {
+          embedHTML = `<div class="bandcamp-wrapper"><iframe style="border: 0; width: 350px; height: 350px;" src="https://bandcamp.com/EmbeddedPlayer/album=${id}/size=large/bgcol=ffffff/linkcol=0687f5/minimal=true/transparent=true/" loading="lazy" seamless></iframe></div>`;
+        }
+      }
+      
+      else if (type === 'applemusic') {
+        // Extract album or playlist ID from Apple Music URL
+        const albumMatch = url.match(/music\.apple\.com\/\w+\/album\/[^\/]+\/(\d+)/);
+        const playlistMatch = url.match(/music\.apple\.com\/\w+\/playlist\/[^\/]+\/(pl\.[^?\s]+)/);
+        
+        if (albumMatch) {
+          embedHTML = `<iframe allow="autoplay *; encrypted-media *; fullscreen *" frameborder="0" height="450" style="width:100%;overflow:hidden;background:transparent;" loading="lazy" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation" src="https://embed.music.apple.com/us/album/${albumMatch[1]}"></iframe>`;
+        } else if (playlistMatch) {
+          embedHTML = `<iframe allow="autoplay *; encrypted-media *; fullscreen *" frameborder="0" height="450" style="width:100%;overflow:hidden;background:transparent;" loading="lazy" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation" src="https://embed.music.apple.com/us/playlist/${playlistMatch[1]}"></iframe>`;
+        }
+      }
+      
+      return embedHTML;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PLAYER LOGIC
+    // ═══════════════════════════════════════════════════════════════
+    
+    let currentTrack = null;
+    // Shuffled playback state: play through `shuffled` in order, then reshuffle
+    let shuffled = [];
+    let shufflePos = 0;
+
+    function initShuffle() {
+      // Create a shallow copy and shuffle it (Fisher–Yates)
+      shuffled = musicCollection.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      shufflePos = 0;
+    }
+
+    function loadRandomTrack() {
+      // Guard: empty collection
+      if (!musicCollection || musicCollection.length === 0) {
+        document.getElementById('embedContainer').innerHTML = '<div class="embed-error">No tracks in the collection. Add some to the <code>musicCollection</code> array.</div>';
+        document.getElementById('collectionSize').textContent = 0;
+        const btn = document.querySelector('.refresh-btn');
+        if (btn) btn.disabled = true;
+        const badgeEmpty = document.getElementById('platformBadge');
+        if (badgeEmpty) {
+          badgeEmpty.href = '#';
+          badgeEmpty.className = 'platform-badge';
+          badgeEmpty.textContent = '—';
+        }
+        return;
+      }
+
+  // Pick next track from shuffled queue. If the queue is empty or out of sync
+  // with the collection length (e.g., collection changed), re-init the shuffle.
+  if (!shuffled.length || shuffled.length !== musicCollection.length) initShuffle();
+  if (shufflePos >= shuffled.length) initShuffle();
+  currentTrack = shuffled[shufflePos++];
+
+      // Update platform badge
+  const badge = document.getElementById('platformBadge');
+  badge.href = currentTrack.url;
+  // ensure opens in a new tab and has safe rel
+  badge.target = '_blank';
+  badge.rel = 'noopener noreferrer';
+  // remove any existing badge-* classes and add the current one without wiping other classes
+  const existingBadgeClasses = [...badge.classList].filter(c => c.startsWith('badge-'));
+  if (existingBadgeClasses.length) badge.classList.remove(...existingBadgeClasses);
+  badge.classList.add('platform-badge', 'badge-' + currentTrack.type);
+  badge.textContent = currentTrack.type.toUpperCase();
+
+      // Convert URL to embed and insert
+      const embedHTML = convertToEmbed(currentTrack.type, currentTrack.url, currentTrack.id);
+      const container = document.getElementById('embedContainer');
+      if (!embedHTML) {
+        container.innerHTML = `<div class="embed-error">Could not embed this track. <a href="${currentTrack.url}" target="_blank" rel="noopener noreferrer">Open source</a></div>`;
+        return;
+      }
+
+      container.innerHTML = embedHTML;
+    }
+
+    // Update collection size
+    document.getElementById('collectionSize').textContent = musicCollection.length;
+
+    // Load a random track on page load
+    loadRandomTrack();
+  </script>
+</body>
+</html>
